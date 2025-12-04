@@ -1,72 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Employee Home Page</title>
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
+{% extends "base.html" %}
+{% block title %}Employee Dashboard{% endblock %}
 
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 20px 0;
-            text-align: center;
-        }
+{% block content %}
 
-        header h1 {
-            font-family: 'Lobster', cursive;
-            margin: 0;
-        }
+<h1 class="text-3xl font-semibold text-slate-100 mb-8">Employee Dashboard</h1>
 
-        nav {
-            background-color: #333;
-            padding: 10px;
-        }
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-        nav ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
+    <!-- Self Service -->
+    <a href="{% url 'self_service' %}"
+       class="block bg-slate-800 border border-slate-700 hover:border-slate-600
+              rounded-xl p-6 shadow-lg transition">
+        <h2 class="text-xl font-semibold text-slate-100 mb-2">Self-Service Portal</h2>
+        <p class="text-slate-400 text-sm">Edit your personal details and account info.</p>
+    </a>
 
-        nav ul li {
-            margin: 10px 0;
-        }
+    <!-- Performance Reviews -->
+    <a href="{% url 'performance_reviews' %}"
+       class="block bg-slate-800 border border-slate-700 hover:border-slate-600
+              rounded-xl p-6 shadow-lg transition">
+        <h2 class="text-xl font-semibold text-slate-100 mb-2">Performance Reviews</h2>
+        <p class="text-slate-400 text-sm">View feedback and performance evaluations.</p>
+    </a>
 
-        nav ul li a {
-            display: block;
-            color: white;
-            text-align: center;
-            padding: 14px 20px;
-            text-decoration: none;
-            transition: background-color 0.3s;
-            background-color: #444;
-            border-radius: 5px;
-        }
+    <!-- Leave Application -->
+    <a href="{% url 'leave_application' %}"
+       class="block bg-slate-800 border border-slate-700 hover:border-slate-600
+              rounded-xl p-6 shadow-lg transition">
+        <h2 class="text-xl font-semibold text-slate-100 mb-2">Leave Application</h2>
+        <p class="text-slate-400 text-sm">Submit your leave requests securely.</p>
+    </a>
 
-        nav ul li a:hover {
-            background-color: #575757;
-        }
-    </style>
+</div>
 
-    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <header>
-        <h1>Employee Dashboard</h1>
-    </header>
-    <nav>
-        <ul>
-            <li><a href="{% url 'self_service' %}">Self-Service Portal</a></li>
-            <li><a href="{% url 'performance_reviews' %}">Performance Reviews</a></li>
-            <li><a href="{% url 'leave_application' %}">Leave Application</a></li>
-        </ul>
-    </nav>
-</body>
-</html>
+{% endblock %}

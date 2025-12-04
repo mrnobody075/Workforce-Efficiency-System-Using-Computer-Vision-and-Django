@@ -1,138 +1,76 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Feeds</title>
+{% block title %}Camera Feeds{% endblock %}
 
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+{% block content %}
 
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<h1 class="text-3xl font-semibold text-slate-100 mb-8">Camera Feeds</h1>
 
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-        }
+<div class="space-y-8">
 
-        header {
-            background: #4CAF50;
-            color: #fff;
-            padding: 20px 0;
-            text-align: center;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        header h1 {
-            font-family: 'Lobster', cursive;
-            margin: 0;
-            font-size: 2.5rem;
-        }
-
-        .video-container {
-            background: #fff;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        video {
-            width: 100%;
-            max-width: 480px;
-            height: auto;
-            border-radius: 10px;
-        }
-
-        .description { margin-top: 10px; }
-        .description p { margin: 5px 0; }
-        .description strong { font-weight: bold; }
-
-        @media (max-width: 768px) {
-            video { max-width: 100%; }
-        }
-    </style>
-</head>
-
-<body>
-<header>
-    <h1>Camera Feeds</h1>
-</header>
-
-<div class="video-container">
-    <video controls>
-        <source src="{% static 'videos/myclassdetectf.mp4' %}" type="video/mp4">
-        Your browser does not support the video tag.
+  <!-- 1. Classroom -->
+  <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
+    <video controls class="w-full max-w-3xl mx-auto rounded-lg bg-black">
+      <source src="{% static '/videos/myclassdetectf.mp4' %}" type="video/mp4">
+      Your browser does not support the video tag.
     </video>
-    <div class="description">
-        <p><strong>Our ClassRoom</strong></p>
+    <p class="text-slate-200 text-center mt-3 font-medium">Our Classroom</p>
+  </div>
+
+  <!-- 2. BSN Block Entrance -->
+  <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
+    <video controls class="w-full max-w-3xl mx-auto rounded-lg bg-black">
+      <source src="{% static '/videos/bsndetect1.mp4' %}" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+    <p class="text-slate-200 text-center mt-3 font-medium">BSN Block Entrance</p>
+  </div>
+
+  <!-- 3. Trespassing Detection -->
+  <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
+    <video controls class="w-full max-w-3xl mx-auto rounded-lg bg-black">
+      <source src="{% static '/videos/trespassingcomplete.mp4' %}" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+    <div class="text-slate-300 text-center mt-3">
+      <p class="font-medium text-slate-100">Trespassing Detection</p>
+      <p class="text-sm text-slate-400">Trespassers count: 0 &nbsp;•&nbsp; Trespassers count: 2</p>
     </div>
-</div>
+  </div>
 
-<div class="video-container">
-    <video controls>
-        <source src="{% static 'videos/bsndetect1.mp4' %}" type="video/mp4">
-        Your browser does not support the video tag.
+  <!-- 4. Worker Count -->
+  <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
+    <video controls class="w-full max-w-3xl mx-auto rounded-lg bg-black">
+      <source src="{% static '/videos/workerscount.mp4' %}" type="video/mp4">
+      Your browser does not support the video tag.
     </video>
-    <div class="description">
-        <p><strong>BSN Block Entrance</strong></p>
+    <div class="text-slate-300 text-center mt-3">
+      <p class="font-medium text-slate-100">Worker Detection & Count</p>
+      <p class="text-sm text-slate-400">Avg Workers: 14, 5, 4</p>
     </div>
-</div>
+  </div>
 
-<div class="video-container">
-    <video controls>
-        <source src="{% static 'videos/trespassingcomplete.mp4' %}" type="video/mp4">
-        Your browser does not support the video tag.
+  <!-- 5. Crowd Limit -->
+  <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
+    <video controls class="w-full max-w-3xl mx-auto rounded-lg bg-black">
+      <source src="{% static '/videos/crowdlimit.mp4' %}" type="video/mp4">
+      Your browser does not support the video tag.
     </video>
-    <div class="description">
-        <p><strong>Trespassing Detection</strong><br>
-        Trespassers count: 0<br>
-        Trespassers count: 2
-        </p>
+    <div class="text-slate-300 text-center mt-3">
+      <p class="font-medium text-slate-100">Factory Floor Zone Limit</p>
+      <p class="text-sm text-slate-400">Worker count exceeded ROI<br>Current: 5</p>
     </div>
-</div>
+  </div>
 
-<div class="video-container">
-    <video controls>
-        <source src="{% static 'videos/workerscount.mp4' %}" type="video/mp4">
-        Your browser does not support the video tag.
+  <!-- 6. Trespass 2 -->
+  <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
+    <video controls class="w-full max-w-3xl mx-auto rounded-lg bg-black">
+      <source src="{% static '/videos/trespass2.mp4' %}" type="video/mp4">
+      Your browser does not support the video tag.
     </video>
-    <div class="description">
-        <p><strong>Worker Detection and Count</strong><br>
-            Avg No of Workers: 14<br>
-            Avg No of Workers: 5<br>
-            Avg No of Workers: 4
-        </p>
-    </div>
+    <p class="text-slate-200 text-center mt-3 font-medium">Trespassing (Camera 2)</p>
+  </div>
+
 </div>
 
-<div class="video-container">
-    <video controls>
-        <source src="{% static 'videos/crowdlimit.mp4' %}" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
-    <div class="description">
-        <p><strong>Factory Floor Zone Limit</strong><br>
-            No of worker at ROI exceeded<br>
-            No of workers: 5
-        </p>
-    </div>
-</div>
-
-<div class="video-container">
-    <video controls>
-        <source src="{% static 'videos/trespass2.mp4' %}" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
-</div>
-
-</body>
-</html>
+{% endblock %}

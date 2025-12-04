@@ -20,4 +20,6 @@ urlpatterns = [
     path('send_notification/', views.send_notification, name='send_notification'),
     path('table/', views.table, name='table'),
     path('data/', views.data, name='data'),
+path('homeadmin/add-review/', views.add_performance_review, name='add_performance_review'),
+
 ]

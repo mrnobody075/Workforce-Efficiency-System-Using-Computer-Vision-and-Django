@@ -1,78 +1,50 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Employee Data Visualization</title>
+{% extends "base.html" %}
+{% block title %}Historical Data & Analytics{% endblock %}
 
-    <!-- DataTables CSS (CDN) -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+{% block content %}
+<h1 class="text-2xl font-semibold text-slate-100 mb-6">Employee Data Visualization</h1>
 
-    <style>
-        body { font-family: 'Roboto', sans-serif; background-color: #f4f4f9; color: #333; line-height: 1.6; padding: 20px; }
-        h1 { text-align: center; margin-bottom: 20px; color: #4CAF50; }
-        h2 { color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; margin-top: 30px; }
-        ul { list-style-type: none; padding: 0; }
-        ul ul { margin-left: 20px; }
-        ul li { margin-bottom: 10px; }
-        .display { width: 100%; margin: 20px 0; border-collapse: collapse; }
-        .display thead th { background-color: #4CAF50; color: #fff; padding: 10px; }
-        .display tbody tr:nth-child(even) { background-color: #f2f2f2; }
-        .display tbody tr:hover { background-color: #ddd; }
-        .display tbody td { padding: 10px; text-align: center; }
-        img { display: block; max-width: 100%; height: auto; margin: 0 auto; }
-        .small-note { font-size: 0.9rem; color: #666; margin-top: 10px; }
-    </style>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
-</head>
-<body>
-    <h1>Employee Data Visualization</h1>
-
-    <h2>Summary Statistics</h2>
-    <ul>
-        <li><strong>Total Employees:</strong> {{ summary_stats.total_employees }}</li>
-        <li><strong>Gender Distribution:</strong></li>
-        <ul>
-            {% if summary_stats.gender_counts %}
-                {% for gender, count in summary_stats.gender_counts.items %}
-                    <li>{{ gender }}: {{ count }}</li>
-                {% endfor %}
-            {% else %}
-                <li>No gender data available</li>
-            {% endif %}
-        </ul>
+<div class="grid gap-6">
+  <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+    <h2 class="text-lg font-medium text-slate-100 mb-3">Summary Statistics</h2>
+    <ul class="text-slate-300 text-sm space-y-1">
+      <li><strong class="text-slate-100">Total Employees:</strong> {{ summary_stats.total_employees }}</li>
+      <li><strong class="text-slate-100">Gender Distribution:</strong></li>
+      <ul class="pl-4">
+        {% if summary_stats.gender_counts %}
+          {% for gender, count in summary_stats.gender_counts.items %}
+            <li class="text-slate-300">{{ gender }}: {{ count }}</li>
+          {% endfor %}
+        {% else %}
+          <li class="text-slate-400">No gender data available</li>
+        {% endif %}
+      </ul>
     </ul>
+  </div>
 
-    <h2>Attendance Analysis (Graph 1)</h2>
-    <img src="{% url 'plot_attendance' %}" alt="Attendance Analysis (Graph 1)">
+  <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+    <h2 class="text-lg font-medium text-slate-100 mb-3">Attendance Analysis</h2>
+    <img src="{% url 'plot_attendance' %}" alt="Attendance" class="w-full rounded-md border border-slate-700 bg-black">
+  </div>
 
-    <h2>Attendance Analysis (Graph 2)</h2>
-    <img src="{% url 'plot_attendanceagain' %}" alt="Attendance Analysis (Graph 2)">
+  <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+    <h2 class="text-lg font-medium text-slate-100 mb-3">Attendance (By Name)</h2>
+    <img src="{% url 'plot_attendanceagain' %}" alt="Attendance by name" class="w-full rounded-md border border-slate-700 bg-black">
+  </div>
 
-    <h2>Gender Distribution Analysis</h2>
-    <img src="{% url 'plot_gender' %}" alt="Gender Distribution Analysis">
-
-    <h2>Age Distribution Analysis</h2>
-    <img src="{% url 'plot_age' %}" alt="Age Distribution Analysis">
-
-    <h2><a href="{% url 'table' %}">Click to Employee Data Table</a></h2>
-
-    <div class="small-note">
-        Note: graphs are served by Django views that return PNG images.
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+      <h2 class="text-lg font-medium text-slate-100 mb-3">Gender Distribution</h2>
+      <img src="{% url 'plot_gender' %}" alt="Gender" class="w-full rounded-md border border-slate-700 bg-black">
     </div>
+    <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+      <h2 class="text-lg font-medium text-slate-100 mb-3">Age Distribution</h2>
+      <img src="{% url 'plot_age' %}" alt="Age" class="w-full rounded-md border border-slate-700 bg-black">
+    </div>
+  </div>
 
-    <script>
-        // If you later render a table here and want DataTables:
-        $(document).ready(function() {
-            if ($('#employee-table').length) {
-                $('#employee-table').DataTable();
-            }
-        });
-    </script>
-</body>
-</html>
+  <div class="text-right">
+    <a href="{% url 'table' %}" class="inline-block px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white">Open Employee Table</a>
+  </div>
+</div>
+{% endblock %}

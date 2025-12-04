@@ -21,7 +21,51 @@ from .models import Employee
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
 
+from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import get_object_or_404
+from functools import wraps
 
+def employee_only(view_func):
+    """Require normal logged-in user (not staff). Staff are redirected to admin home."""
+    @wraps(view_func)
+    @login_required
+    def _wrapped(request, *args, **kwargs):
+        if getattr(request.user, "is_staff", False):
+            # optional: you can use messages to inform admin
+            return redirect('homeadmin')
+        return view_func(request, *args, **kwargs)
+    return _wrapped
+@staff_member_required(login_url='login')
+def add_performance_review(request):
+    """
+    Admin-only view to add a PerformanceReview for an Employee.
+    GET -> show form
+    POST -> create review and redirect back with success message
+    """
+    if request.method == 'POST':
+        empid = request.POST.get('employeeid')
+        performance = request.POST.get('performance', '').strip()
+        feedbacks = request.POST.get('feedbacks', '').strip()
+
+        if not empid:
+            messages.error(request, "Please select an employee.")
+            return redirect('add_performance_review')
+
+        employee = get_object_or_404(Employee, employeeid=empid)
+
+        # create review
+        PerformanceReview.objects.create(
+            employee=employee,
+            performance=performance or None,
+            feedbacks=feedbacks or None
+        )
+
+        messages.success(request, f"Performance review saved for {employee.name} ({employee.employeeid}).")
+        return redirect('add_performance_review')
+
+    # GET: show form
+    employees = Employee.objects.order_by('employeeid').all()
+    return render(request, 'admin_add_review.html', {'employees': employees})
 # ---------- Authentication (simple) ----------
 def login_view(request):
     error = None
@@ -42,7 +86,7 @@ def login_view(request):
 @staff_member_required(login_url='login')
 def homeadmin(request):
     return render(request, 'homeadmin.html')
-@login_required
+@employee_only
 def home(request):
     return render(request, 'home.html')
 
@@ -272,54 +316,118 @@ def generate_pdf(request):
 
 
 # ---------- performance reviews / leave application ----------
+@employee_only
 def performance_reviews(request):
-    employees = Employee.objects.all()
-    reviews = None
-    if request.method == 'POST':
-        emp_id = request.POST.get('emp_id')
-        reviews = PerformanceReview.objects.filter(employee__employeeid=emp_id)
-    return render(request, 'performance_reviews.html', {'reviews': reviews, 'employee_ids': employees})
+    # logged-in user identity
+    employee_id = request.user.username
 
+    try:
+        employee = Employee.objects.get(employeeid=employee_id)
+    except Employee.DoesNotExist:
+        return HttpResponseForbidden("You are not linked to an employee record.")
+
+    # Fetch reviews belonging ONLY to this employee
+    reviews = PerformanceReview.objects.filter(employee=employee)
+
+    return render(request, 'performance_reviews.html', {
+        'employee': employee,
+        'reviews': reviews
+    })
+@employee_only
+@employee_only
 def leave_application(request):
-    employees = Employee.objects.all()
+    # Determine the logged-in employee
+    emp_id = request.user.username
+
+    try:
+        employee = Employee.objects.get(employeeid=emp_id)
+    except Employee.DoesNotExist:
+        return HttpResponseForbidden("Employee record not found.")
+
     success = None
+    error_message = None
+
     if request.method == 'POST':
-        emp_id = request.POST.get('emp_id')
         leave_type = request.POST.get('leave_type')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
         reason = request.POST.get('reason')
-        emp = Employee.objects.get(employeeid=emp_id)
-        LeaveApplication.objects.create(employee=emp, leave_type=leave_type,
-                                        start_date=start_date, end_date=end_date, reason=reason)
-        success = "Leave application submitted successfully!"
-    return render(request, 'leave_application.html', {'employee_ids': employees, 'success_message': success})
+
+        try:
+            LeaveApplication.objects.create(
+                employee=employee,
+                leave_type=leave_type,
+                start_date=start_date,
+                end_date=end_date,
+                reason=reason
+            )
+            success = "Leave application submitted successfully!"
+        except Exception as e:
+            error_message = f"An error occurred: {e}"
+
+    return render(request, 'leave_application.html', {
+        'employee': employee,
+        'success_message': success,
+        'error_message': error_message,
+    })
 
 # ---------- notifications (email) ----------
 from django.core.mail import EmailMessage
+
+from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.core.mail import EmailMessage
+from django.contrib import messages
+
+@staff_member_required(login_url='login')
+def notifications(request):
+    # pass a queryset of employees (or list of tuples if you prefer)
+    employees = Employee.objects.exclude(email__isnull=True).exclude(email__exact='').order_by('employeeid')
+    return render(request, 'notifications.html', {'employees': employees})
+
+
 @staff_member_required(login_url='login')
 def send_notification(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        email_type = request.POST.get('email_type')
-        subject = request.POST.get('custom_subject') or "Notification"
-        message = request.POST.get('custom_message') or ""
-        if email_type == 'shift_change':
-            shift_number = request.POST.get('shift_number')
-            shift_time = request.POST.get('shift_time')
-            subject = f"Shift Change Notification for Shift {shift_number}"
-            message = f"Dear Employee,\n\nYour shift has been changed to Shift {shift_number} at {shift_time}.\n\n"
-        try:
-            EmailMessage(subject, message, to=[email]).send()
-            return HttpResponse("Notification sent successfully!")
-        except Exception as e:
-            return HttpResponse(f"An error occurred: {e}")
-    return HttpResponse("Invalid request", status=400)
+    if request.method != 'POST':
+        return redirect('notifications')
 
-# ---------- other simple pages ----------
-def notifications(request):
-    employees = Employee.objects.all()
-    return render(request, 'notifications.html', {'employees': employees})
+    # basic server-side validation
+    email = request.POST.get('email')
+    email_type = request.POST.get('email_type')
+
+    if not email or '@' not in email:
+        messages.error(request, "Invalid recipient email.")
+        return redirect('notifications')
+
+    if email_type not in ('shift_change', 'custom_message'):
+        messages.error(request, "Invalid email type.")
+        return redirect('notifications')
+
+    subject = "Notification"
+    message_body = ""
+    if email_type == 'shift_change':
+        shift_number = request.POST.get('shift_number', '').strip()
+        shift_time = request.POST.get('shift_time', '').strip()
+        if not shift_number or not shift_time:
+            messages.error(request, "Shift number and shift time are required for shift notifications.")
+            return redirect('notifications')
+        subject = f"Shift Change Notification for Shift {shift_number}"
+        message_body = f"Dear Employee,\n\nYour shift has been changed to Shift {shift_number} at {shift_time}.\n\n"
+    else:
+        subject = request.POST.get('custom_subject', '').strip() or "Notification"
+        message_body = request.POST.get('custom_message', '').strip()
+        if not message_body:
+            messages.error(request, "Custom message cannot be empty.")
+            return redirect('notifications')
+
+    try:
+        EmailMessage(subject, message_body, to=[email]).send()
+        messages.success(request, "Notification sent successfully!")
+    except Exception as e:
+        messages.error(request, f"Failed to send email: {e}")
+
+    return redirect('notifications')
+
 @staff_member_required(login_url='login')
 def camera_feeds(request):
     return render(request, 'camera_feeds.html')
@@ -376,33 +484,31 @@ def historical_data(request):
     except Exception as e:
         # keep error visible while debugging
         return render(request, 'historical_data.html', {'error': str(e)})
+@employee_only
 def self_service(request):
-    employee_ids = Employee.objects.values_list('employeeid', flat=True)
+    # logged-in user identity
+    employee_id = request.user.username
+
+    # find the matching employee row
+    try:
+        employee = Employee.objects.get(employeeid=employee_id)
+    except Employee.DoesNotExist:
+        return HttpResponseForbidden("You are not linked to an employee record.")
 
     if request.method == 'POST':
-        emp_id = request.POST.get('emp_id')
         phone_no = request.POST.get('phone_no')
         address = request.POST.get('address')
         email = request.POST.get('email')
         dob = request.POST.get('dob')
 
-        try:
-            employee = Employee.objects.get(employeeid=emp_id)
-            employee.phone_no = phone_no
-            employee.address = address
-            employee.email = email
-            employee.dob = dob
-            employee.save()
+        employee.phone_no = phone_no
+        employee.address = address
+        employee.email = email
+        employee.dob = dob
+        employee.save()
 
-            messages.success(request, "Details updated successfully!")
-            return redirect('self_service')
+        messages.success(request, "Details updated successfully!")
+        return redirect('self_service')
 
-        except Employee.DoesNotExist:
-            messages.error(request, "Employee ID not found.")
+    return render(request, 'self_service.html', {'employee': employee})
 
-        except Exception as e:
-            messages.error(request, f"An error occurred: {e}")
-
-    return render(request, 'self_service.html', {
-        'employee_ids': employee_ids,
-    })

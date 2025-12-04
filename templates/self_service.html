@@ -1,118 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Self-Service Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Self-Service Portal{% endblock %}
 
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+{% block content %}
 
-        .container {
-            max-width: 600px;
-            width: 100%;
-            padding: 20px;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-        }
+<div class="max-w-xl mx-auto bg-slate-800 border border-slate-700 rounded-xl p-8 shadow-lg">
 
-        h2 {
-            font-weight: 700;
-            color: #4CAF50;
-            text-align: center;
-            margin-bottom: 20px;
-        }
+    <h2 class="text-2xl font-semibold text-slate-100 mb-6 text-center">
+        Self-Service Portal
+    </h2>
 
-        form {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        label { margin-bottom: 5px; font-weight: bold; }
-
-        input, select {
-            margin-bottom: 15px;
-            padding: 10px;
-            width: 100%;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-        }
-
-        button {
-            padding: 10px 15px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            width: 100%;
-        }
-
-        button:hover { background-color: #45a049; }
-
-        .message {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .message p { font-size: 1.2rem; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Self-Service Portal</h2>
-
-
-        <form method="POST" action="{% url 'self_service' %}">
-            {% csrf_token %}
-
-            <label for="emp_id">Employee ID:</label>
-            <select id="emp_id" name="emp_id" required>
-                {% for emp_id in employee_ids %}
-                    <option value="{{ emp_id }}">{{ emp_id }}</option>
-                {% endfor %}
-            </select>
-
-            <label for="phone_no">Phone Number:</label>
-            <input type="text" id="phone_no" name="phone_no" required>
-
-            <label for="address">Address:</label>
-            <input type="text" id="address" name="address" required>
-
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
-
-            <label for="dob">Date of Birth:</label>
-            <input type="date" id="dob" name="dob" required>
-
-            <button type="submit">Update Details</button>
-        </form>
-
-        <div class="message">
-            {% if success_message %}
-                <p style="color: green;">{{ success_message }}</p>
-            {% endif %}
-
-            {% if error_message %}
-                <p style="color: red;">{{ error_message }}</p>
-            {% endif %}
+    {% if messages %}
+        <div class="mb-4">
+            {% for msg in messages %}
+                <p class="p-3 rounded 
+                    {% if msg.tags == 'error' %}
+                        bg-red-900/30 text-red-300 
+                    {% else %}
+                        bg-emerald-900/30 text-emerald-300
+                    {% endif %}
+                ">
+                    {{ msg }}
+                </p>
+            {% endfor %}
         </div>
-    </div>
-</body>
-</html>
+    {% endif %}
+
+    <form method="POST" action="{% url 'self_service' %}" class="space-y-4">
+        {% csrf_token %}
+
+        <!-- Employee ID (read-only) -->
+        <div>
+            <label class="text-slate-300 text-sm">Employee ID</label>
+            <input type="text" value="{{ employee.employeeid }}" readonly
+                class="w-full mt-1 bg-slate-700 border border-slate-600 text-slate-300 
+                       rounded-lg px-3 py-2 cursor-not-allowed">
+        </div>
+
+        <!-- Phone -->
+        <div>
+            <label for="phone_no" class="text-slate-300 text-sm">Phone Number</label>
+            <input type="text" id="phone_no" name="phone_no" value="{{ employee.phone_no }}"
+                class="w-full mt-1 bg-slate-700 border border-slate-600 text-slate-200 
+                       rounded-lg px-3 py-2 focus:ring focus:ring-slate-500">
+        </div>
+
+        <!-- Address -->
+        <div>
+            <label for="address" class="text-slate-300 text-sm">Address</label>
+            <input type="text" id="address" name="address" value="{{ employee.address }}"
+                class="w-full mt-1 bg-slate-700 border border-slate-600 text-slate-200 
+                       rounded-lg px-3 py-2 focus:ring focus:ring-slate-500">
+        </div>
+
+        <!-- Email -->
+        <div>
+            <label for="email" class="text-slate-300 text-sm">Email</label>
+            <input type="email" id="email" name="email" value="{{ employee.email }}"
+                class="w-full mt-1 bg-slate-700 border border-slate-600 text-slate-200 
+                       rounded-lg px-3 py-2 focus:ring focus:ring-slate-500">
+        </div>
+
+        <!-- DOB -->
+        <div>
+            <label for="dob" class="text-slate-300 text-sm">Date of Birth</label>
+            <input type="date" id="dob" name="dob" value="{{ employee.dob|date:'Y-m-d' }}"
+                class="w-full mt-1 bg-slate-700 border border-slate-600 text-slate-200 
+                       rounded-lg px-3 py-2 focus:ring focus:ring-slate-500">
+        </div>
+
+        <button type="submit"
+            class="w-full bg-slate-600 hover:bg-slate-500 text-white font-medium 
+                   py-2 rounded-lg transition">
+            Update Details
+        </button>
+    </form>
+
+</div>
+
+{% endblock %}

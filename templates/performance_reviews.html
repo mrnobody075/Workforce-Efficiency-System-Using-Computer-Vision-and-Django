@@ -1,60 +1,51 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance Reviews</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Roboto', sans-serif; background-color: #f4f4f9; color: #333; line-height: 1.6; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 600px; width: 100%; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h2 { font-weight: 700; color: #4CAF50; text-align: center; margin-bottom: 20px; }
-        form { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; width:100%; }
-        label { margin-bottom: 5px; font-weight: bold; width: 100%; }
-        select, button { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; }
-        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-        h3 { color: #333; margin-bottom: 15px; text-align:center; }
-        ul { list-style-type: none; padding: 0; }
-        li { background: #f9f9f9; margin-bottom: 10px; padding: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        p { text-align: center; color: #555; }
-        .error { color: red; text-align: center; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Performance Reviews</h2>
+{% block title %}Performance Reviews{% endblock %}
 
-        <form method="POST" action="{% url 'performance_reviews' %}">
-            {% csrf_token %}
-            <label for="emp_id">Select Employee ID:</label>
-            <select id="emp_id" name="emp_id" required>
-                {% for emp_id in employee_ids %}
-                    <option value="{{ emp_id }}">{{ emp_id }}</option>
-                {% endfor %}
-            </select>
-            <button type="submit">Fetch Reviews</button>
-        </form>
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
+    <h1 class="text-2xl font-semibold text-slate-100 mb-4">
+      Performance Reviews
+    </h1>
 
-        {% if reviews %}
-            <h3>Performance Reviews for Employee ID: {{ emp_id }}</h3>
-            <ul>
-                {% for review in reviews %}
-                    <li>
-                        <strong>Performance:</strong> {{ review.0 }}<br>
-                        <strong>Feedbacks:</strong> {{ review.1 }}
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>No performance reviews available.</p>
-        {% endif %}
+    {% if messages %}
+      <div class="mb-4 space-y-2">
+        {% for msg in messages %}
+          <div class="p-3 rounded-md {% if 'error' in msg.tags %}bg-red-900/30 text-red-300 border border-red-700{% else %}bg-slate-700 text-slate-200 border border-slate-600{% endif %}">
+            {{ msg }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
 
-        {% if error_message %}
-            <p class="error">{{ error_message }}</p>
-        {% endif %}
+    {% if reviews %}
+      <ul class="space-y-3">
+        {% for review in reviews %}
+          <li class="bg-slate-800 border border-slate-700 rounded-md p-4">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-100 font-medium">Performance</span>
+              <span class="text-sm text-slate-400">{{ review.created_at|default:"" }}</span>
+            </div>
+            <p class="mt-2 text-slate-200">{{ review.performance }}</p>
+            {% if review.feedbacks %}
+              <div class="mt-3 text-slate-300">
+                <strong class="text-slate-100">Feedback:</strong>
+                <p class="mt-1">{{ review.feedbacks }}</p>
+              </div>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="rounded-md bg-slate-800 border border-slate-700 p-4 text-slate-300">
+        No performance reviews available.
+      </div>
+    {% endif %}
+
+    <div class="mt-6 text-right">
+      <a href="{% url 'home' %}" class="text-sm text-slate-400 hover:text-slate-200">Back to dashboard</a>
     </div>
-</body>
-</html>
+  </div>
+</div>
+{% endblock %}

@@ -1,113 +1,70 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Notifications</title>
+{% block title %}Send Notification{% endblock %}
 
-    <script>
-        function toggleFields() {
-            var emailType = document.querySelector('input[name="email_type"]:checked').value;
-            if (emailType === 'shift_change') {
-                document.getElementById('shift_fields').style.display = 'block';
-                document.getElementById('custom_message_field').style.display = 'none';
-            } else {
-                document.getElementById('shift_fields').style.display = 'none';
-                document.getElementById('custom_message_field').style.display = 'block';
-            }
-        }
-    </script>
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 shadow">
+    <h1 class="text-2xl font-semibold text-slate-100 mb-4">Send Notification to Employee</h1>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            color: #4CAF50;
-        }
-        form {
-            max-width: 600px;
-            margin: auto;
-            padding: 20px;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input[type="text"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        input[type="radio"] {
-            margin-right: 5px;
-        }
-        input[type="submit"] {
-            width: 100%;
-            padding: 12px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-        input[type="submit"]:hover {
-            background: #45a049;
-        }
-    </style>
-</head>
+    <div class="mb-4 space-y-2">
+      {% for message in messages %}
+        <div class="p-3 rounded-md {% if message.tags == 'error' %}bg-red-900/40 text-red-300{% else %}bg-slate-700 text-slate-200{% endif %} border {% if message.tags == 'error' %}border-red-700{% else %}border-slate-600{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
 
-<body>
-    <h1>Send Notification to Employee</h1>
+    <form action="{% url 'send_notification' %}" method="POST" class="space-y-4">
+      {% csrf_token %}
 
-    <form action="{% url 'send_notification' %}" method="POST">
-        {% csrf_token %}
-
-        <label for="email">Employee Email:</label>
-        <select id="email" name="email" required>
-            {% for name, email in employees %}
-                <option value="{{ email }}">{{ name }} ({{ email }})</option>
-            {% endfor %}
+      <label class="block text-slate-300">
+        Employee
+        <select id="email" name="email" required class="mt-1 w-full rounded-md bg-slate-700 text-slate-100 border border-slate-600 px-3 py-2">
+          <option value="">— select employee —</option>
+          {% for emp in employees %}
+            <option value="{{ emp.email }}">{{ emp.employeeid }} — {{ emp.name }} ({{ emp.email }})</option>
+          {% endfor %}
         </select>
+      </label>
 
-        <label>Email Type:</label>
-        <input type="radio" id="shift_change" name="email_type" value="shift_change" onclick="toggleFields()" checked>
-        <label for="shift_change">Shift Change</label>
+      <div class="flex items-center gap-4 text-slate-300">
+        <label class="inline-flex items-center">
+          <input type="radio" name="email_type" value="shift_change" checked onclick="toggleFields()" class="accent-blue-500">
+          <span class="ml-2">Shift Change</span>
+        </label>
+        <label class="inline-flex items-center">
+          <input type="radio" name="email_type" value="custom_message" onclick="toggleFields()" class="accent-blue-500">
+          <span class="ml-2">Custom Message</span>
+        </label>
+      </div>
 
-        <input type="radio" id="custom_message" name="email_type" value="custom_message" onclick="toggleFields()">
-        <label for="custom_message">Custom Message</label>
-
-        <div id="shift_fields">
-            <label for="shift_number">Shift Number:</label>
-            <input type="text" id="shift_number" name="shift_number">
-
-            <label for="shift_time">Shift Time:</label>
-            <input type="text" id="shift_time" name="shift_time">
+      <div id="shift_fields" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <input id="shift_number" name="shift_number" placeholder="Shift number" class="rounded-md bg-slate-700 text-slate-100 border border-slate-600 px-3 py-2">
+          <input id="shift_time" name="shift_time" placeholder="Shift time" class="rounded-md bg-slate-700 text-slate-100 border border-slate-600 px-3 py-2">
         </div>
+      </div>
 
-        <div id="custom_message_field" style="display:none;">
-            <label for="custom_subject">Custom Subject:</label>
-            <input type="text" id="custom_subject" name="custom_subject">
+      <div id="custom_message_field" style="display:none;" class="space-y-3">
+        <input id="custom_subject" name="custom_subject" placeholder="Subject" class="w-full rounded-md bg-slate-700 text-slate-100 border border-slate-600 px-3 py-2">
+        <textarea id="custom_message" name="custom_message" rows="4" placeholder="Message" class="w-full rounded-md bg-slate-700 text-slate-100 border border-slate-600 px-3 py-2"></textarea>
+      </div>
 
-            <label for="custom_message">Custom Message:</label>
-            <textarea id="custom_message" name="custom_message" rows="5"></textarea>
-        </div>
-
-        <input type="submit" value="Send Notification">
+      <div class="flex items-center gap-3">
+        <button id="sendBtn" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white">Send Notification</button>
+        <a href="{% url 'homeadmin' %}" class="text-slate-400 hover:text-slate-200">Back</a>
+      </div>
     </form>
-</body>
-</html>
+  </div>
+</div>
+
+<script>
+  function toggleFields() {
+    const emailType = document.querySelector('input[name="email_type"]:checked').value;
+    document.getElementById('shift_fields').style.display = emailType === 'shift_change' ? 'block' : 'none';
+    document.getElementById('custom_message_field').style.display = emailType === 'custom_message' ? 'block' : 'none';
+  }
+  document.addEventListener('DOMContentLoaded', toggleFields);
+</script>
+{% endblock %}
