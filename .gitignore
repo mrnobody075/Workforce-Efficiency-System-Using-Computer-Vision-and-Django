@@ -1,0 +1,5 @@
+.env
+static/videos/
+hrapp/migrations/
+asgi.py
+wsgi.py
