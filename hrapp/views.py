@@ -1,5 +1,9 @@
 import io
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
@@ -7,65 +11,30 @@ from django.http import HttpResponse, JsonResponse, FileResponse
 from .models import Employee, Attendance, PerformanceReview, LeaveApplication
 from django.core.mail import send_mail
 import pandas as pd
-# --- at the very top of hrapp/views.py ---
-import matplotlib
-matplotlib.use('Agg')   # MUST be set before importing pyplot
-import matplotlib.pyplot as plt
 
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from PIL import Image
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.http import FileResponse, JsonResponse
+from django.contrib.admin.views.decorators import staff_member_required
+
+from django.core.mail import EmailMessage
+
+from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
+
+from PIL import Image
+import io
+import traceback
+
 from .models import Employee
-from django.contrib.admin.views.decorators import staff_member_required
-from django.utils.decorators import method_decorator
+from django.shortcuts import render
 
-from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import get_object_or_404
-from functools import wraps
 
-def employee_only(view_func):
-    """Require normal logged-in user (not staff). Staff are redirected to admin home."""
-    @wraps(view_func)
-    @login_required
-    def _wrapped(request, *args, **kwargs):
-        if getattr(request.user, "is_staff", False):
-            # optional: you can use messages to inform admin
-            return redirect('homeadmin')
-        return view_func(request, *args, **kwargs)
-    return _wrapped
-@staff_member_required(login_url='login')
-def add_performance_review(request):
-    """
-    Admin-only view to add a PerformanceReview for an Employee.
-    GET -> show form
-    POST -> create review and redirect back with success message
-    """
-    if request.method == 'POST':
-        empid = request.POST.get('employeeid')
-        performance = request.POST.get('performance', '').strip()
-        feedbacks = request.POST.get('feedbacks', '').strip()
-
-        if not empid:
-            messages.error(request, "Please select an employee.")
-            return redirect('add_performance_review')
-
-        employee = get_object_or_404(Employee, employeeid=empid)
-
-        # create review
-        PerformanceReview.objects.create(
-            employee=employee,
-            performance=performance or None,
-            feedbacks=feedbacks or None
-        )
-
-        messages.success(request, f"Performance review saved for {employee.name} ({employee.employeeid}).")
-        return redirect('add_performance_review')
-
-    # GET: show form
-    employees = Employee.objects.order_by('employeeid').all()
-    return render(request, 'admin_add_review.html', {'employees': employees})
 # ---------- Authentication (simple) ----------
 def login_view(request):
     error = None
@@ -83,12 +52,11 @@ def login_view(request):
             error = "Invalid credentials. Please try again."
     return render(request, 'login.html', {'error': error})
 
+#------------------Admin Page----------------------
 @staff_member_required(login_url='login')
 def homeadmin(request):
     return render(request, 'homeadmin.html')
-@employee_only
-def home(request):
-    return render(request, 'home.html')
+
 
 # ---------- Data fetch helpers ----------
 def fetch_employee_queryset():
@@ -98,6 +66,61 @@ def df_from_queryset(qs):
     # convert to dataframe; select relevant fields
     qs_vals = qs.values()
     return pd.DataFrame.from_records(qs_vals)
+
+
+@staff_member_required(login_url='login')
+def notifications(request):
+    # pass a queryset of employees (or list of tuples if you prefer)
+    employees = Employee.objects.exclude(email__isnull=True).exclude(email__exact='').order_by('employeeid')
+    return render(request, 'notifications.html', {'employees': employees})
+
+# -------------Notifications--------------------
+@staff_member_required(login_url='login')
+def send_notification(request):
+    if request.method != 'POST':
+        return redirect('notifications')
+
+    # basic server-side validation
+    email = request.POST.get('email')
+    email_type = request.POST.get('email_type')
+
+    if not email or '@' not in email:
+        messages.error(request, "Invalid recipient email.")
+        return redirect('notifications')
+
+    if email_type not in ('shift_change', 'custom_message'):
+        messages.error(request, "Invalid email type.")
+        return redirect('notifications')
+
+    subject = "Notification"
+    message_body = ""
+    if email_type == 'shift_change':
+        shift_number = request.POST.get('shift_number', '').strip()
+        shift_time = request.POST.get('shift_time', '').strip()
+        if not shift_number or not shift_time:
+            messages.error(request, "Shift number and shift time are required for shift notifications.")
+            return redirect('notifications')
+        subject = f"Shift Change Notification for Shift {shift_number}"
+        message_body = f"Dear Employee,\n\nYour shift has been changed to Shift {shift_number} at {shift_time}.\n\n"
+    else:
+        subject = request.POST.get('custom_subject', '').strip() or "Notification"
+        message_body = request.POST.get('custom_message', '').strip()
+        if not message_body:
+            messages.error(request, "Custom message cannot be empty.")
+            return redirect('notifications')
+
+    try:
+        EmailMessage(subject, message_body, to=[email]).send()
+        messages.success(request, "Notification sent successfully!")
+    except Exception as e:
+        messages.error(request, f"Failed to send email: {e}")
+
+    return redirect('notifications')
+# ----------------------Camera Feeds---------------------
+@staff_member_required(login_url='login')
+def camera_feeds(request):
+    return render(request, 'camera_feeds.html')
+
 
 # ---------- plotting helpers ----------
 def fig_to_response(fig):
@@ -199,13 +222,7 @@ def generate_csv(request):
         'Content-Disposition': 'attachment; filename="employee_data.csv"'
     })
 
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.units import inch
-from reportlab.lib.utils import ImageReader
-import io, traceback
-from django.http import FileResponse, JsonResponse
+
 @staff_member_required(login_url='login')
 def generate_pdf(request):
     try:
@@ -314,6 +331,93 @@ def generate_pdf(request):
         print("generate_pdf platypus error:", tb)
         return JsonResponse({'error': str(e), 'trace': tb}, status=500)
 
+@staff_member_required(login_url='login')
+def add_performance_review(request):
+    if request.method == 'POST':
+        empid = request.POST.get('employeeid')
+        performance = request.POST.get('performance', '').strip()
+        feedbacks = request.POST.get('feedbacks', '').strip()
+
+        if not empid:
+            messages.error(request, "Please select an employee.")
+            return redirect('add_performance_review')
+
+        employee = get_object_or_404(Employee, employeeid=empid)
+
+        # create review
+        PerformanceReview.objects.create(
+            employee=employee,
+            performance=performance or None,
+            feedbacks=feedbacks or None
+        )
+
+        messages.success(request, f"Performance review saved for {employee.name} ({employee.employeeid}).")
+        return redirect('add_performance_review')
+
+    # GET: show form
+    employees = Employee.objects.order_by('employeeid').all()
+    return render(request, 'admin_add_review.html', {'employees': employees})
+# ---------------------------
+# Helper: summary statistics
+# ---------------------------
+def calculate_summary_statistics_from_df(df: pd.DataFrame):
+    total_employees = len(df)
+    if 'GENDER' in df.columns:
+        # keep case-insensitive grouping and handle missing
+        gender_counts = df['GENDER'].fillna('UNKNOWN').str.upper().value_counts().to_dict()
+    else:
+        gender_counts = {}
+    return {
+        'total_employees': total_employees,
+        'gender_counts': gender_counts
+    }
+
+# ---------------------------
+# historical_data view
+# ---------------------------
+def historical_data(request):
+    try:
+        # If you have the fetch_employee_queryset + df_from_queryset helpers:
+        try:
+            qs = fetch_employee_queryset()
+            df = df_from_queryset(qs)
+        except NameError:
+            # fallback: import model and build dataframe directly
+            from .models import Employee
+            qs = Employee.objects.all().values()
+            df = pd.DataFrame.from_records(qs)
+
+        summary_stats = calculate_summary_statistics_from_df(df)
+
+        # Pass summary and optional sample rows to template
+        sample_rows = df.head(10).to_dict(orient='records') if not df.empty else []
+        context = {
+            'summary_stats': summary_stats,
+            'sample_employees': sample_rows,
+        }
+        return render(request, 'historical_data.html', context)
+    except Exception as e:
+        # keep error visible while debugging
+        return render(request, 'historical_data.html', {'error': str(e)})
+
+def employee_only(view_func):
+    @wraps(view_func)
+    @login_required
+    def _wrapped(request, *args, **kwargs):
+        if getattr(request.user, "is_staff", False):
+            # optional: you can use messages to inform admin
+            return redirect('homeadmin')
+        return view_func(request, *args, **kwargs)
+    return _wrapped
+
+
+#------------------------------------------------------------------
+#                       Employee Related functions
+#------------------------------------------------------------------
+@employee_only
+def home(request):
+    return render(request, 'home.html')
+
 
 # ---------- performance reviews / leave application ----------
 @employee_only
@@ -333,7 +437,6 @@ def performance_reviews(request):
         'employee': employee,
         'reviews': reviews
     })
-@employee_only
 @employee_only
 def leave_application(request):
     # Determine the logged-in employee
@@ -371,119 +474,6 @@ def leave_application(request):
         'error_message': error_message,
     })
 
-# ---------- notifications (email) ----------
-from django.core.mail import EmailMessage
-
-from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.core.mail import EmailMessage
-from django.contrib import messages
-
-@staff_member_required(login_url='login')
-def notifications(request):
-    # pass a queryset of employees (or list of tuples if you prefer)
-    employees = Employee.objects.exclude(email__isnull=True).exclude(email__exact='').order_by('employeeid')
-    return render(request, 'notifications.html', {'employees': employees})
-
-
-@staff_member_required(login_url='login')
-def send_notification(request):
-    if request.method != 'POST':
-        return redirect('notifications')
-
-    # basic server-side validation
-    email = request.POST.get('email')
-    email_type = request.POST.get('email_type')
-
-    if not email or '@' not in email:
-        messages.error(request, "Invalid recipient email.")
-        return redirect('notifications')
-
-    if email_type not in ('shift_change', 'custom_message'):
-        messages.error(request, "Invalid email type.")
-        return redirect('notifications')
-
-    subject = "Notification"
-    message_body = ""
-    if email_type == 'shift_change':
-        shift_number = request.POST.get('shift_number', '').strip()
-        shift_time = request.POST.get('shift_time', '').strip()
-        if not shift_number or not shift_time:
-            messages.error(request, "Shift number and shift time are required for shift notifications.")
-            return redirect('notifications')
-        subject = f"Shift Change Notification for Shift {shift_number}"
-        message_body = f"Dear Employee,\n\nYour shift has been changed to Shift {shift_number} at {shift_time}.\n\n"
-    else:
-        subject = request.POST.get('custom_subject', '').strip() or "Notification"
-        message_body = request.POST.get('custom_message', '').strip()
-        if not message_body:
-            messages.error(request, "Custom message cannot be empty.")
-            return redirect('notifications')
-
-    try:
-        EmailMessage(subject, message_body, to=[email]).send()
-        messages.success(request, "Notification sent successfully!")
-    except Exception as e:
-        messages.error(request, f"Failed to send email: {e}")
-
-    return redirect('notifications')
-
-@staff_member_required(login_url='login')
-def camera_feeds(request):
-    return render(request, 'camera_feeds.html')
-# add these near your other imports
-from django.shortcuts import render
-import pandas as pd
-
-# ---------------------------
-# Helper: summary statistics
-# ---------------------------
-def calculate_summary_statistics_from_df(df: pd.DataFrame):
-    total_employees = len(df)
-    if 'GENDER' in df.columns:
-        # keep case-insensitive grouping and handle missing
-        gender_counts = df['GENDER'].fillna('UNKNOWN').str.upper().value_counts().to_dict()
-    else:
-        gender_counts = {}
-    return {
-        'total_employees': total_employees,
-        'gender_counts': gender_counts
-    }
-
-# ---------------------------
-# historical_data view
-# ---------------------------
-def historical_data(request):
-    """
-    Renders historical_data page showing summary statistics and links to the plots.
-    Assumes you have helpers:
-      - fetch_employee_queryset() -> QuerySet of Employee
-      - df_from_queryset(qs) -> pandas.DataFrame
-    If you didn't create those helpers, use Employee.objects.all() + pd.DataFrame.from_records(...)
-    """
-    try:
-        # If you have the fetch_employee_queryset + df_from_queryset helpers:
-        try:
-            qs = fetch_employee_queryset()
-            df = df_from_queryset(qs)
-        except NameError:
-            # fallback: import model and build dataframe directly
-            from .models import Employee
-            qs = Employee.objects.all().values()
-            df = pd.DataFrame.from_records(qs)
-
-        summary_stats = calculate_summary_statistics_from_df(df)
-
-        # Pass summary and optional sample rows to template
-        sample_rows = df.head(10).to_dict(orient='records') if not df.empty else []
-        context = {
-            'summary_stats': summary_stats,
-            'sample_employees': sample_rows,
-        }
-        return render(request, 'historical_data.html', context)
-    except Exception as e:
-        # keep error visible while debugging
-        return render(request, 'historical_data.html', {'error': str(e)})
 @employee_only
 def self_service(request):
     # logged-in user identity

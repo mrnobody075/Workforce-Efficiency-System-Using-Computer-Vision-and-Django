@@ -13,7 +13,7 @@ class Employee(models.Model):
     JAN = models.IntegerField(default=0)
     FEB = models.IntegerField(default=0)
     MAR = models.IntegerField(default=0)
-    # add other months/fields as needed
+
 
     def __str__(self):
         return f"{self.employeeid} - {self.name}"

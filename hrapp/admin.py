@@ -9,13 +9,6 @@ from .models import Employee, Attendance, PerformanceReview, LeaveApplication
 
 @admin.action(description="Create user accounts for selected employees")
 def create_user_accounts(modeladmin, request, queryset):
-    """
-    Admin action: create Django User accounts for selected Employee queryset.
-    For each employee:
-      - If a User with username==employee.employeeid exists -> skip (but optionally reset below)
-      - Else create user, set a random password, save, and if Employee has a 'user' field link it.
-    NOTE: This prints passwords in the admin messages which is OK for local/dev only.
-    """
     created = []
     skipped = []
     for emp in queryset:
@@ -34,7 +27,7 @@ def create_user_accounts(modeladmin, request, queryset):
             user.is_superuser = False
             user.save()
 
-            # try link to Employee.user if field exists
+
             try:
                 if hasattr(emp, 'user'):
                     emp.user = user
@@ -47,7 +40,7 @@ def create_user_accounts(modeladmin, request, queryset):
 
             created.append((username, pwd, linked))
 
-    # Format messages for admin UI
+
     if created:
         lines = []
         for username, pwd, linked in created:
