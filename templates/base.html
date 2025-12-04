@@ -1,0 +1,56 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Major Project (2025-26){% endblock %}</title>
+
+  <!-- Tailwind CDN (quick start) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // optional: enable forms/typography plugin via CDN config
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#16a34a' /* green-600 */
+          }
+        }
+      },
+      plugins: [
+        // enable if you plan to use forms/typography classes via CDN
+      ],
+    }
+  </script>
+
+  <!-- Your single shared stylesheet (overrides and helpers) -->
+  <link rel="stylesheet" href="{% static 'hrapp/css/styles.css' %}">
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- top nav -->
+  <header class="bg-white shadow-sm">
+    <div class="app-container flex items-center justify-between py-4">
+      <a href="{% url 'home' %}" class="text-xl font-semibold text-primary">Major Project (2025-26)</a>
+      <nav class="space-x-3">
+        {% if request.user.is_authenticated and request.user.is_staff %}
+          <a href="{% url 'homeadmin' %}" class="text-sm text-gray-700 hover:text-primary">Admin</a>
+        {% endif %}
+
+      </nav>
+    </div>
+  </header>
+
+  <!-- page content -->
+  <main class="app-container mt-6 mb-10">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t bg-white">
+    <div class="app-container py-4 text-sm text-gray-500">
+      &copy; {{ year|default:"2025" }} Major Project (2025-26) — Built with Tailwind
+    </div>
+  </footer>
+</body>
+</html>

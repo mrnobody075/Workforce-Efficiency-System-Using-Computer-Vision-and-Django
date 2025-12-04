@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Feeds</title>
+
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        header {
+            background: #4CAF50;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-family: 'Lobster', cursive;
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .video-container {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        video {
+            width: 100%;
+            max-width: 480px;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .description { margin-top: 10px; }
+        .description p { margin: 5px 0; }
+        .description strong { font-weight: bold; }
+
+        @media (max-width: 768px) {
+            video { max-width: 100%; }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <h1>Camera Feeds</h1>
+</header>
+
+<div class="video-container">
+    <video controls>
+        <source src="{% static 'videos/myclassdetectf.mp4' %}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="description">
+        <p><strong>Our ClassRoom</strong></p>
+    </div>
+</div>
+
+<div class="video-container">
+    <video controls>
+        <source src="{% static 'videos/bsndetect1.mp4' %}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="description">
+        <p><strong>BSN Block Entrance</strong></p>
+    </div>
+</div>
+
+<div class="video-container">
+    <video controls>
+        <source src="{% static 'videos/trespassingcomplete.mp4' %}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="description">
+        <p><strong>Trespassing Detection</strong><br>
+        Trespassers count: 0<br>
+        Trespassers count: 2
+        </p>
+    </div>
+</div>
+
+<div class="video-container">
+    <video controls>
+        <source src="{% static 'videos/workerscount.mp4' %}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="description">
+        <p><strong>Worker Detection and Count</strong><br>
+            Avg No of Workers: 14<br>
+            Avg No of Workers: 5<br>
+            Avg No of Workers: 4
+        </p>
+    </div>
+</div>
+
+<div class="video-container">
+    <video controls>
+        <source src="{% static 'videos/crowdlimit.mp4' %}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="description">
+        <p><strong>Factory Floor Zone Limit</strong><br>
+            No of worker at ROI exceeded<br>
+            No of workers: 5
+        </p>
+    </div>
+</div>
+
+<div class="video-container">
+    <video controls>
+        <source src="{% static 'videos/trespass2.mp4' %}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Major Project (2025-26){% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto mt-12">
+  <div class="card">
+    <h2 class="page-title text-2xl text-gray-900 mb-2">Sign in</h2>
+    <p class="text-sm text-gray-500 mb-4">Enter your credentials to access the portal.</p>
+
+    {% if error %}
+      <div class="mb-4 text-red-700 bg-red-50 p-3 rounded">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <input name="username" type="text" placeholder="Username" class="w-full border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" required>
+      <input name="password" type="password" placeholder="Password" class="w-full border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" required>
+      <button class="w-full bg-primary text-white font-medium py-2 rounded hover:bg-green-700">Sign in</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Notifications</title>
+
+    <script>
+        function toggleFields() {
+            var emailType = document.querySelector('input[name="email_type"]:checked').value;
+            if (emailType === 'shift_change') {
+                document.getElementById('shift_fields').style.display = 'block';
+                document.getElementById('custom_message_field').style.display = 'none';
+            } else {
+                document.getElementById('shift_fields').style.display = 'none';
+                document.getElementById('custom_message_field').style.display = 'block';
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        form {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+        input[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Send Notification to Employee</h1>
+
+    <form action="{% url 'send_notification' %}" method="POST">
+        {% csrf_token %}
+
+        <label for="email">Employee Email:</label>
+        <select id="email" name="email" required>
+            {% for name, email in employees %}
+                <option value="{{ email }}">{{ name }} ({{ email }})</option>
+            {% endfor %}
+        </select>
+
+        <label>Email Type:</label>
+        <input type="radio" id="shift_change" name="email_type" value="shift_change" onclick="toggleFields()" checked>
+        <label for="shift_change">Shift Change</label>
+
+        <input type="radio" id="custom_message" name="email_type" value="custom_message" onclick="toggleFields()">
+        <label for="custom_message">Custom Message</label>
+
+        <div id="shift_fields">
+            <label for="shift_number">Shift Number:</label>
+            <input type="text" id="shift_number" name="shift_number">
+
+            <label for="shift_time">Shift Time:</label>
+            <input type="text" id="shift_time" name="shift_time">
+        </div>
+
+        <div id="custom_message_field" style="display:none;">
+            <label for="custom_subject">Custom Subject:</label>
+            <input type="text" id="custom_subject" name="custom_subject">
+
+            <label for="custom_message">Custom Message:</label>
+            <textarea id="custom_message" name="custom_message" rows="5"></textarea>
+        </div>
+
+        <input type="submit" value="Send Notification">
+    </form>
+</body>
+</html>
